@@ -1,0 +1,22 @@
+{
+  "api_base_url": "http://api.kolada.se/v2",
+  "lakehouse_name": "KoladaLakehouse",
+  "workspace_name": "KoladaWorkspace",
+  "notebook_names": {
+    "metadata_kpi": "01_Fetch_KPI_Metadata",
+    "metadata_municipality": "02_Fetch_Municipality_Metadata",
+    "data_ingestion": "03_Fetch_Kolada_Data"
+  },
+  "tables": {
+    "kpi": "kpi_metadata",
+    "municipality": "municipality_metadata",
+    "municipality_groups": "municipality_groups_metadata",
+    "kpi_groups": "kpi_groups_metadata",
+    "ou": "organizational_units_metadata",
+    "data": "kolada_data",
+    "oudata": "kolada_ou_data"
+  },
+  "pagination": {
+    "per_page": 5000
+  }
+}
