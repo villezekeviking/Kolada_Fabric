@@ -22,6 +22,7 @@ import requests
 import json
 import os
 import sys
+import base64
 from pathlib import Path
 from typing import Dict, Optional
 import time
@@ -193,6 +194,9 @@ class FabricDeployer:
         with open(notebook_path, 'r', encoding='utf-8') as f:
             notebook_content = f.read()
         
+        # Encode content as Base64
+        encoded_content = base64.b64encode(notebook_content.encode()).decode()
+        
         # Check if notebook exists
         notebook_id = self.get_notebook_id(workspace_id, notebook_name)
         
@@ -205,7 +209,7 @@ class FabricDeployer:
                     'parts': [
                         {
                             'path': 'notebook-content.py',
-                            'payload': notebook_content,
+                            'payload': encoded_content,
                             'payloadType': 'InlineBase64'
                         }
                     ]
@@ -226,7 +230,7 @@ class FabricDeployer:
                     'parts': [
                         {
                             'path': 'notebook-content.py',
-                            'payload': notebook_content,
+                            'payload': encoded_content,
                             'payloadType': 'InlineBase64'
                         }
                     ]
