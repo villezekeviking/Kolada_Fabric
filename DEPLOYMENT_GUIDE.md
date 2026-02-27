@@ -192,23 +192,41 @@ This option involves manually creating resources and uploading files through the
 Open notebook `03_Fetch_Kolada_Data.ipynb` and customize the parameters:
 
 ```python
-# Example KPIs (you can add more)
+# Municipality data parameters
 KPI_IDS = ["N00945", "N00946"]  # Add your KPI IDs here
-
-# Example municipalities (empty means all)
 MUNICIPALITY_IDS = []  # e.g., ["1860", "0180"] or leave empty for all
-
-# Years to fetch
 YEARS = ["2020", "2021", "2022", "2023"]  # Customize years
+
+# OU data parameters (enabled by default)
+OU_KPI_IDS = ["N15033", "N15030"]  # KPIs with OU data
+OU_IDS = []  # Specific OUs or leave empty for all
+OU_YEARS = ["2020", "2021", "2022"]
 ```
 
 ### Find KPI IDs
 
 To discover available KPI IDs:
 1. Run notebook `01_Fetch_KPI_Metadata.ipynb`
-2. Browse the resulting `kpi_metadata` table
+2. Browse the resulting `dKpi` dimension table
 3. Look for KPIs of interest and note their IDs
-4. Use these IDs in notebook 03
+4. Check `has_ou_data` column to see which KPIs support OU-level data
+5. Use these IDs in notebook 03
+
+### Understanding the Star Schema
+
+The solution uses Power BI star schema naming conventions:
+- **Dimensions** (prefix `d`): `dKpi`, `dMunicipality`, `dOrganizationalUnit`
+- **Facts** (prefix `f`): `fKoladaData` (unified fact table)
+- **Bridge tables** (prefix `br`): `brMunicipalityGroupMember`, `brKpiGroupMember`
+
+All dimensions include integer surrogate keys for optimal Power BI performance:
+- `kpi_key` in `dKpi`
+- `municipality_key` in `dMunicipality`
+- `ou_key` in `dOrganizationalUnit`
+
+The unified fact table `fKoladaData` contains both municipality-level and OU-level data:
+- Municipality records have `ou_id` starting with "NO_OU_"
+- OU records have `ou_id` as the actual organizational unit ID
 
 ## Running the Notebooks
 
@@ -217,25 +235,29 @@ Execute the notebooks in the following order:
 ### Step 1: Fetch KPI Metadata
 ```
 Notebook: 01_Fetch_KPI_Metadata.ipynb
-Purpose: Downloads all available KPI definitions
-Output: kpi_metadata table
+Purpose: Downloads all available KPI definitions with surrogate keys
+Output: dKpi dimension table
 Estimated Time: 2-5 minutes
+Key: Creates kpi_key surrogate integer keys for relationships
 ```
 
 ### Step 2: Fetch Municipality Metadata
 ```
 Notebook: 02_Fetch_Municipality_Metadata.ipynb
-Purpose: Downloads municipality, group, and OU metadata
-Output: Multiple metadata tables
+Purpose: Downloads municipality, group, and OU metadata with surrogate keys
+Output: Multiple dimension and bridge tables (dMunicipality, dOrganizationalUnit, 
+        dMunicipalityGroup, dKpiGroup, brMunicipalityGroupMember, brKpiGroupMember)
 Estimated Time: 3-7 minutes
+Key: Creates surrogate keys and "No OU" placeholders for unified fact table
 ```
 
 ### Step 3: Fetch Data
 ```
 Notebook: 03_Fetch_Kolada_Data.ipynb
-Purpose: Downloads actual data values
-Output: kolada_data table
+Purpose: Downloads actual data values (both municipality and OU level)
+Output: fKoladaData unified fact table
 Estimated Time: Varies based on parameters (5-30 minutes)
+Key: Combines municipality and OU data into single table with surrogate keys
 ```
 
 ### Scheduling Automated Runs
@@ -283,10 +305,11 @@ To keep your data up-to-date:
 **Symptoms:** Empty DataFrames, zero rows
 
 **Solutions:**
-- Verify the KPI IDs are valid (check notebook 01 output)
+- Verify the KPI IDs are valid (check notebook 01 output in `dKpi` table)
 - Ensure the years you're requesting have data
 - Check if the municipality IDs are correct
 - Some KPIs only have data for specific years or municipalities
+- For OU data, ensure `has_ou_data = true` in the `dKpi` table for those KPIs
 
 ### Issue: Deployment Script Fails
 
@@ -328,7 +351,10 @@ After successful deployment:
 
 2. **Create Power BI Reports**
    - Connect Power BI to your Lakehouse
-   - Build visualizations using the Kolada data
+   - Set up relationships using surrogate keys (kpi_key, municipality_key, ou_key)
+   - Build visualizations using the star schema
+   - Use the unified fact table to compare municipality and OU-level data
+   - Leverage bridge tables for many-to-many relationships with groups
    - Share insights with stakeholders
 
 3. **Extend the Solution**
