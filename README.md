@@ -28,6 +28,9 @@ Kolada_Fabric/
 
 ## Features
 
+- **Power BI Star Schema**: Tables follow Power BI naming conventions (dimensions: `d*`, facts: `f*`, bridge: `br*`)
+- **Surrogate Keys**: Integer surrogate keys on all dimensions for optimal Power BI performance
+- **Unified Fact Table**: Single `fKoladaData` table combines municipality-level and OU-level data
 - **Automated Metadata Ingestion**: Fetch all KPIs, municipalities, groups, and organizational units
 - **Flexible Data Ingestion**: Configure which KPIs, municipalities, and years to fetch
 - **Pagination Support**: Handles large datasets with automatic pagination
@@ -118,9 +121,14 @@ Edit `config/config.json` to customize:
   "lakehouse_name": "KoladaLakehouse",
   "workspace_name": "KoladaWorkspace",
   "tables": {
-    "kpi": "kpi_metadata",
-    "municipality": "municipality_metadata",
-    "data": "kolada_data"
+    "kpi": "dKpi",
+    "municipality": "dMunicipality",
+    "municipality_groups": "dMunicipalityGroup",
+    "municipality_group_members": "brMunicipalityGroupMember",
+    "kpi_groups": "dKpiGroup",
+    "kpi_group_members": "brKpiGroupMember",
+    "ou": "dOrganizationalUnit",
+    "data": "fKoladaData"
   }
 }
 ```
@@ -132,68 +140,125 @@ Edit `config/config.json` to customize:
 Fetches all KPI (Key Performance Indicator) metadata from Kolada API.
 
 **Output Tables:**
-- `kpi_metadata`: Contains all KPI definitions, descriptions, and metadata
+- `dKpi`: KPI dimension table with all KPI definitions, descriptions, and metadata
+  - Includes `kpi_key` surrogate integer key for relationships
+  - Business key: `id` column
 
 **Key Features:**
 - Automatic pagination handling
 - Adds ingestion timestamp for tracking
+- Integer surrogate key for Power BI relationships
 - Summary statistics by municipality type and gender division
 
 ### 02_Fetch_Municipality_Metadata.ipynb
 
 Fetches municipality, municipality groups, organizational units, and KPI groups metadata.
 
-**Output Tables:**
-- `municipality_metadata`: All Swedish municipalities and county councils
-- `municipality_groups_metadata`: Municipality groupings
-- `municipality_group_members`: Detailed membership information
-- `kpi_groups_metadata`: KPI groupings
-- `kpi_group_members`: KPI group membership details
-- `organizational_units_metadata`: Organizational units (schools, departments, etc.)
+**Output Tables (Star Schema):**
+- `dMunicipality`: Municipality dimension - All Swedish municipalities and county councils
+  - Includes `municipality_key` surrogate integer key
+  - Business key: `id` column
+- `dMunicipalityGroup`: Municipality groupings
+- `brMunicipalityGroupMember`: Bridge table for municipality group membership
+  - Includes `municipality_key` surrogate key lookups
+- `dKpiGroup`: KPI groupings
+- `brKpiGroupMember`: Bridge table for KPI group membership
+- `dOrganizationalUnit`: Organizational units (schools, departments, etc.)
+  - Includes `ou_key` surrogate integer key
+  - Business key: `id` column
+  - Includes "No OU" placeholder rows for municipality-level data (id = "NO_OU_{municipality_id}")
 
 **Key Features:**
+- Power BI star schema naming (d*, br* prefixes)
+- Integer surrogate keys on all dimensions
+- "No OU" placeholders enable unified fact table
 - Flattens nested group structures
-- Creates separate tables for group memberships
+- Creates separate bridge tables for many-to-many relationships
 - Comprehensive metadata coverage
 
 ### 03_Fetch_Kolada_Data.ipynb
 
-Fetches actual data values for specified KPIs, municipalities, and years.
+Fetches actual data values for specified KPIs, municipalities, and years. Creates a **unified fact table** that combines both municipality-level and OU-level data.
 
 **Customizable Parameters:**
 ```python
+# Municipality data
 KPI_IDS = ["N00945", "N00946"]  # List of KPI IDs to fetch
 MUNICIPALITY_IDS = []  # Empty for all, or specify IDs
 YEARS = ["2020", "2021", "2022", "2023"]  # Years to fetch
+
+# OU data (enabled by default)
+OU_KPI_IDS = ["N15033", "N15030"]  # KPIs with OU data
+OU_IDS = []  # Empty for all, or specify OU IDs
+OU_YEARS = ["2020", "2021", "2022"]  # Years for OU data
 ```
 
-**Output Tables:**
-- `kolada_data`: Municipality-level data
-- `kolada_ou_data`: Organizational unit-level data (optional)
+**Output Table:**
+- `fKoladaData`: Unified fact table containing both municipality-level and OU-level data
+  - Municipality records: `ou_id` = "NO_OU_{municipality_id}"
+  - OU records: `ou_id` = actual OU ID
+  - Includes surrogate keys: `kpi_key`, `municipality_key`, `ou_key`
+  - Business keys retained: `kpi`, `municipality`, `ou_id`
 
 **Key Features:**
+- Unified fact table approach (single source of truth)
+- OU data ingestion enabled by default
+- "No OU" placeholders for municipality-level data
+- Integer surrogate keys for optimal Power BI performance
 - Flexible parameter configuration
 - Handles gender-disaggregated data
-- Data quality statistics
-- Support for both municipality and OU data
+- Comprehensive data quality statistics
+- Automatic municipality lookup for OU data
 
-## Data Schema
+## Data Schema (Star Schema)
 
-### KPI Metadata
-```
-id, title, description, definition, municipality_type, 
-is_divided_by_gender, operating_area, has_ou_data, 
-publication_date, ingestion_timestamp, source_system
-```
+### Dimensions
 
-### Municipality Metadata
+#### dKpi (KPI Dimension)
 ```
-id, title, type, ingestion_timestamp, source_system
+kpi_key (surrogate key), id (business key), title, description, 
+definition, municipality_type, is_divided_by_gender, operating_area, 
+has_ou_data, publication_date, ingestion_timestamp, source_system
 ```
 
-### Kolada Data
+#### dMunicipality (Municipality Dimension)
 ```
-kpi, municipality, period, gender, value, count, status,
+municipality_key (surrogate key), id (business key), title, type, 
+ingestion_timestamp, source_system
+```
+
+#### dOrganizationalUnit (OU Dimension)
+```
+ou_key (surrogate key), id (business key), municipality, title, 
+ingestion_timestamp, source_system
+
+Note: Includes "No OU" placeholder rows with id = "NO_OU_{municipality_id}"
+```
+
+### Fact Table
+
+#### fKoladaData (Unified Fact)
+```
+kpi_key (FK), municipality_key (FK), ou_key (FK), 
+kpi (business key), municipality (business key), ou_id (business key),
+period, gender, value, count, status, 
+ingestion_timestamp, source_system
+
+Municipality-level data: ou_id starts with "NO_OU_"
+OU-level data: ou_id is the actual organizational unit ID
+```
+
+### Bridge Tables
+
+#### brMunicipalityGroupMember
+```
+group_id, group_title, member_id, member_title, municipality_key,
+ingestion_timestamp, source_system
+```
+
+#### brKpiGroupMember
+```
+group_id, group_title, kpi_id, kpi_title,
 ingestion_timestamp, source_system
 ```
 

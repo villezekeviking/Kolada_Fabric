@@ -36,9 +36,9 @@
 # Configuration parameters
 # Modify these settings based on your needs
 
-# Lakehouse table names for output
-VALUES_TABLE_NAME = "kolada_values"
-KPI_DETAILS_TABLE_NAME = "kolada_kpi_details"
+# Lakehouse table names for output (Power BI star schema naming)
+VALUES_TABLE_NAME = "fKoladaData"
+KPI_DETAILS_TABLE_NAME = "dKpi"
 
 # API settings
 KOLADA_BASE_URL = "http://api.kolada.se/v2"

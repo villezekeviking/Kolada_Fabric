@@ -8,13 +8,14 @@
     "data_ingestion": "03_Fetch_Kolada_Data"
   },
   "tables": {
-    "kpi": "kpi_metadata",
-    "municipality": "municipality_metadata",
-    "municipality_groups": "municipality_groups_metadata",
-    "kpi_groups": "kpi_groups_metadata",
-    "ou": "organizational_units_metadata",
-    "data": "kolada_data",
-    "oudata": "kolada_ou_data"
+    "kpi": "dKpi",
+    "municipality": "dMunicipality",
+    "municipality_groups": "dMunicipalityGroup",
+    "municipality_group_members": "brMunicipalityGroupMember",
+    "kpi_groups": "dKpiGroup",
+    "kpi_group_members": "brKpiGroupMember",
+    "ou": "dOrganizationalUnit",
+    "data": "fKoladaData"
   },
   "pagination": {
     "per_page": 5000

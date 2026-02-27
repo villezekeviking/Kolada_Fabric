@@ -1,6 +1,15 @@
 # Example Configurations for Kolada Fabric
 
-This file provides example configurations for different use cases.
+This file provides example configurations for different use cases with the unified fact table approach.
+
+## Understanding the Star Schema
+
+The data model uses Power BI star schema naming:
+- **Dimensions** (prefix `d`): `dKpi`, `dMunicipality`, `dOrganizationalUnit`, `dMunicipalityGroup`, `dKpiGroup`
+- **Facts** (prefix `f`): `fKoladaData` (unified fact table)
+- **Bridge tables** (prefix `br`): `brMunicipalityGroupMember`, `brKpiGroupMember`
+
+All dimensions have integer surrogate keys (`kpi_key`, `municipality_key`, `ou_key`) for optimal Power BI performance.
 
 ## Example 1: Basic Municipality Performance Dashboard
 
@@ -9,11 +18,11 @@ For analyzing general municipality performance across Sweden:
 ```python
 # In notebook 03_Fetch_Kolada_Data.ipynb
 
-# Common performance KPIs
+# Municipality data parameters
 KPI_IDS = [
     "N00945",  # Example KPI 1
     "N00946",  # Example KPI 2
-    # Add more KPI IDs after running notebook 01
+    # Add more KPI IDs after running notebook 01 (check dKpi table)
 ]
 
 # All municipalities (leave empty)
@@ -21,7 +30,14 @@ MUNICIPALITY_IDS = []
 
 # Recent years
 YEARS = ["2020", "2021", "2022", "2023"]
+
+# OU data parameters (can be empty if not needed)
+OU_KPI_IDS = []
+OU_IDS = []
+OU_YEARS = []
 ```
+
+**Result:** Municipality-level data will have `ou_id` starting with "NO_OU_" in the unified `fKoladaData` table.
 
 ## Example 2: Specific Municipality Deep Dive
 
@@ -31,18 +47,23 @@ For detailed analysis of specific municipalities:
 # Focus on Stockholm, Göteborg, Malmö
 MUNICIPALITY_IDS = ["0180", "1480", "1280"]
 
-# All available KPIs (or filter by category after checking metadata)
-KPI_IDS = []  # Will need to specify after reviewing KPI metadata
+# Specific KPIs (filter by category after checking dKpi table)
+KPI_IDS = ["N00945", "N00946", "N00947"]
 
 YEARS = ["2018", "2019", "2020", "2021", "2022", "2023"]
+
+# No OU data for this analysis
+OU_KPI_IDS = []
+OU_IDS = []
+OU_YEARS = []
 ```
 
-## Example 3: Education Sector Analysis
+## Example 3: Education Sector Analysis with School-Level Data
 
-For education-focused KPIs:
+For education-focused KPIs with both municipality and school (OU) level data:
 
 ```python
-# Education KPIs (examples - check actual IDs in metadata)
+# Education KPIs (check dKpi table where has_ou_data = true)
 KPI_IDS = [
     # Add education-related KPI IDs from notebook 01
     # Search for keywords: "skola", "elev", "utbildning"
@@ -53,14 +74,30 @@ MUNICIPALITY_IDS = []
 
 # Academic years
 YEARS = ["2019", "2020", "2021", "2022", "2023"]
+
+# OU data for school-level analysis
+OU_KPI_IDS = [
+    "N15033",  # Example: School KPI
+    "N15030",  # Example: Another school KPI
+]
+
+# All schools (or filter by specific OUs from dOrganizationalUnit table)
+OU_IDS = []
+
+OU_YEARS = ["2019", "2020", "2021", "2022", "2023"]
 ```
+
+**Result:** Unified `fKoladaData` table contains:
+- Municipality-level education data (ou_id starts with "NO_OU_")
+- School-level education data (ou_id is the actual school ID)
+- Use `ou_key` to filter or join with `dOrganizationalUnit` dimension
 
 ## Example 4: Healthcare/Social Services
 
 For healthcare and social services analysis:
 
 ```python
-# Healthcare KPIs (examples - check actual IDs in metadata)
+# Healthcare KPIs (check dKpi table)
 KPI_IDS = [
     # Add healthcare-related KPI IDs from notebook 01
     # Search for keywords: "vård", "äldreomsorg", "hälsa"
@@ -70,47 +107,83 @@ KPI_IDS = [
 MUNICIPALITY_IDS = []
 
 YEARS = ["2020", "2021", "2022", "2023"]
+
+# OU data if analyzing specific care facilities
+OU_KPI_IDS = []  # Add if needed
+OU_IDS = []
+OU_YEARS = []
 ```
 
-## Example 5: Regional Comparison
+## Example 5: Regional Comparison Using Municipality Groups
 
 For comparing regions (using municipality groups):
 
 1. First, run notebook 02 to get municipality groups
-2. Identify group IDs from `municipality_groups_metadata` table
-3. Use group IDs instead of individual municipality IDs:
+2. Query `dMunicipalityGroup` and `brMunicipalityGroupMember` tables to find groups of interest
+3. Extract municipality IDs from the bridge table
 
 ```python
-KPI_IDS = ["N00945", "N00946"]  # Your KPIs of interest
+# In Power BI or a query notebook, find municipality IDs in a group:
+# SELECT member_id FROM brMunicipalityGroupMember WHERE group_id = 'your_group_id'
 
-# Use group IDs from municipality_groups_metadata
-MUNICIPALITY_IDS = ["group_id_1", "group_id_2"]
+KPI_IDS = ["N00945", "N00946"]
+
+# Use municipality IDs from your selected group
+MUNICIPALITY_IDS = ["0180", "1480", "1280"]  # Example: major cities
 
 YEARS = ["2020", "2021", "2022"]
+
+OU_KPI_IDS = []
+OU_IDS = []
+OU_YEARS = []
 ```
 
-## Example 6: Organizational Unit Analysis
+**Power BI Tip:** Use the `brMunicipalityGroupMember` bridge table to create many-to-many relationships between groups and the fact table.
+
+## Example 6: Organizational Unit Deep Dive
 
 For school or department level analysis:
 
 ```python
-# In a customized version of notebook 03
-
-# First get OU IDs from notebook 02
+# First, query dOrganizationalUnit to find OUs of interest
 # Filter by municipality if needed
 
+# KPIs that have OU data (check has_ou_data = true in dKpi table)
 OU_KPI_IDS = [
-    # KPIs that have OU data (check has_ou_data = true in KPI metadata)
+    "N15033",
+    "N15030",
+    # Add more OU-level KPIs
 ]
 
-OU_IDS = [
-    # Specific organizational unit IDs from ou_metadata table
-]
+# Specific organizational units (from dOrganizationalUnit table)
+# Or leave empty for all
+OU_IDS = []
 
 OU_YEARS = ["2020", "2021", "2022"]
 
-# Use the fetch_ou_data function
-df_ou_data = fetch_ou_data(OU_KPI_IDS, OU_IDS if OU_IDS else None, OU_YEARS)
+# You can also include municipality-level KPIs for comparison
+KPI_IDS = ["N00945"]  # Municipality-level equivalent
+MUNICIPALITY_IDS = []
+YEARS = ["2020", "2021", "2022"]
+```
+
+**Result:** The unified `fKoladaData` table allows you to compare municipality-level and OU-level data side-by-side.
+
+**Power BI DAX Example:**
+```dax
+// Measure to show only municipality-level data
+Municipality Level = 
+CALCULATE(
+    SUM(fKoladaData[value]),
+    FILTER(fKoladaData, LEFT(fKoladaData[ou_id], 6) = "NO_OU_")
+)
+
+// Measure to show only OU-level data
+OU Level = 
+CALCULATE(
+    SUM(fKoladaData[value]),
+    FILTER(fKoladaData, LEFT(fKoladaData[ou_id], 6) <> "NO_OU_")
+)
 ```
 
 ## Configuration File Customization
@@ -128,9 +201,14 @@ You can also modify `config/config.json` for workspace settings:
     "data_ingestion": "03_Fetch_Kolada_Data"
   },
   "tables": {
-    "kpi": "kpi_metadata",
-    "municipality": "municipality_metadata",
-    "data": "kolada_data_2023"
+    "kpi": "dKpi",
+    "municipality": "dMunicipality",
+    "municipality_groups": "dMunicipalityGroup",
+    "municipality_group_members": "brMunicipalityGroupMember",
+    "kpi_groups": "dKpiGroup",
+    "kpi_group_members": "brKpiGroupMember",
+    "ou": "dOrganizationalUnit",
+    "data": "fKoladaData"
   },
   "pagination": {
     "per_page": 5000
@@ -193,22 +271,48 @@ Configure notebook schedules based on data update frequency:
 
 ## Tips for Finding KPIs
 
-After running notebook 01, query the metadata:
+After running notebook 01, query the dKpi dimension table:
 
-```python
-# In a Fabric notebook or SQL endpoint
-SELECT id, title, description
-FROM kpi_metadata
+```sql
+-- In a Fabric notebook or SQL endpoint
+SELECT id, title, description, has_ou_data
+FROM dKpi
 WHERE title LIKE '%keyword%'
 ORDER BY title;
 
-# Common search keywords:
-# - 'kostnad' (cost)
-# - 'personal' (staff)
-# - 'andel' (proportion)
-# - 'antal' (number)
-# - 'nöjd' (satisfied)
+-- Common search keywords:
+-- - 'kostnad' (cost)
+-- - 'personal' (staff)
+-- - 'andel' (proportion)
+-- - 'antal' (number)
+-- - 'nöjd' (satisfied)
+
+-- Find KPIs with OU data available:
+SELECT id, title
+FROM dKpi
+WHERE has_ou_data = 1
+ORDER BY title;
 ```
+
+## Power BI Relationship Setup
+
+When creating your Power BI model, set up these relationships using surrogate keys:
+
+1. **Fact to Dimensions (Many-to-One):**
+   - `fKoladaData[kpi_key]` → `dKpi[kpi_key]`
+   - `fKoladaData[municipality_key]` → `dMunicipality[municipality_key]`
+   - `fKoladaData[ou_key]` → `dOrganizationalUnit[ou_key]`
+
+2. **Bridge Tables (Many-to-Many via bridge):**
+   - `dMunicipalityGroup[id]` → `brMunicipalityGroupMember[group_id]`
+   - `brMunicipalityGroupMember[municipality_key]` → `dMunicipality[municipality_key]`
+   - `dKpiGroup[id]` → `brKpiGroupMember[group_id]`
+   - `brKpiGroupMember[kpi_id]` → `dKpi[id]` (business key)
+
+3. **OU to Municipality (Many-to-One):**
+   - `dOrganizationalUnit[municipality]` → `dMunicipality[id]` (business key)
+
+**Important:** Always use surrogate keys (integer columns) for fact-to-dimension relationships for best performance.
 
 ## Custom Table Names
 
