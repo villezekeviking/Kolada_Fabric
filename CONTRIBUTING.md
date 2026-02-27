@@ -81,9 +81,8 @@ For feature requests:
 When adding or modifying features:
 
 1. Update the README.md if user-facing
-2. Update DEPLOYMENT_GUIDE.md for deployment changes
-3. Update API_REFERENCE.md if API usage changes
-4. Add inline comments for complex code
+2. Update API_REFERENCE.md if API usage changes
+3. Add inline comments for complex code
 
 ### Testing
 
@@ -91,9 +90,8 @@ Before submitting a pull request:
 
 1. Test your changes in a Fabric environment
 2. Verify all notebooks run without errors
-3. Check that the deployment script works (if modified)
-4. Validate JSON files are properly formatted
-5. Test with different configurations
+3. Validate JSON files are properly formatted
+4. Test with different configurations
 
 ### Notebook Development
 
@@ -105,23 +103,12 @@ When modifying notebooks:
 4. Include data validation and summaries
 5. Consider performance for large datasets
 
-### Deployment Script
-
-When modifying the deployment script:
-
-1. Test with a development workspace
-2. Ensure backward compatibility
-3. Add error handling for API failures
-4. Update documentation with new parameters
-5. Test with both service principal and user auth
-
 ## Areas for Contribution
 
 ### High Priority
 
 - **Error Handling**: Improve error messages and recovery
 - **Performance**: Optimize for large datasets
-- **Testing**: Add unit tests for deployment script
 - **Incremental Loading**: Implement `from_date` parameter usage
 - **Monitoring**: Add logging and monitoring capabilities
 
@@ -131,7 +118,6 @@ When modifying the deployment script:
 - **Scheduling**: Create templates for scheduled runs
 - **Power BI Integration**: Add example reports
 - **Configuration**: Expand configuration options
-- **Docker**: Create containerized deployment option
 
 ### Nice to Have
 
@@ -146,7 +132,6 @@ When modifying the deployment script:
 ```
 Kolada_Fabric/
 ├── notebooks/              # Jupyter notebooks for data ingestion
-├── deployment/            # Deployment automation scripts
 ├── config/               # Configuration files
 ├── docs/                 # Additional documentation (future)
 ├── tests/                # Unit tests (future)
