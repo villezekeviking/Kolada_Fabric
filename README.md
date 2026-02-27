@@ -8,7 +8,6 @@ This repository contains the resources needed to ingest, store, and analyze Kola
 
 - Fetch metadata (KPIs, municipalities, organizational units)
 - Ingest data from the Kolada API into Microsoft Fabric Lakehouse
-- Deploy all resources to a Fabric workspace automatically
 
 ## Project Structure
 
@@ -18,11 +17,8 @@ Kolada_Fabric/
 │   ├── 01_Fetch_KPI_Metadata.ipynb
 │   ├── 02_Fetch_Municipality_Metadata.ipynb
 │   └── 03_Fetch_Kolada_Data.ipynb
-├── deployment/            # Deployment automation scripts
-│   └── deploy_to_fabric.py
 ├── config/               # Configuration files
 │   └── config.json
-├── Kolada_Fabric_Notebook.py  # Alternative single-file notebook
 └── README.md
 ```
 
@@ -35,21 +31,14 @@ Kolada_Fabric/
 - **Flexible Data Ingestion**: Configure which KPIs, municipalities, and years to fetch
 - **Pagination Support**: Handles large datasets with automatic pagination
 - **Delta Lake Storage**: Stores data in Delta format for optimal performance
-- **Automated Deployment**: Deploy all resources to Fabric with a single script
 
 ## Prerequisites
 
-1. **Microsoft Fabric Access**
-   - Access to a Microsoft Fabric workspace
-   - Permissions to create Lakehouses and Notebooks
-
-2. **For Automated Deployment** (Optional):
-   - Azure AD App Registration with Fabric API permissions
-   - Service Principal credentials (Client ID, Client Secret, Tenant ID)
+**Microsoft Fabric Access**
+- Access to a Microsoft Fabric workspace
+- Permissions to create Lakehouses and Notebooks
 
 ## Quick Start
-
-### Option 1: Manual Setup (Recommended for First-Time Users)
 
 1. **Create a Workspace and Lakehouse in Fabric**
    - Log into Microsoft Fabric
@@ -64,52 +53,7 @@ Kolada_Fabric/
 3. **Run the Notebooks in Order**
    - **01_Fetch_KPI_Metadata.ipynb**: Fetches all KPI metadata
    - **02_Fetch_Municipality_Metadata.ipynb**: Fetches municipality and group metadata
-   - **03_Fetch_Kolada_Data.ipynb**: Fetches actual data values
-
-### Option 2: Automated Deployment
-
-1. **Set Up Service Principal**
-   ```bash
-   # Set environment variables
-   export FABRIC_TENANT_ID="your-tenant-id"
-   export FABRIC_CLIENT_ID="your-client-id"
-   export FABRIC_CLIENT_SECRET="your-client-secret"
-   export FABRIC_WORKSPACE_NAME="KoladaWorkspace"  # Optional
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   pip install requests
-   ```
-
-3. **Run Deployment Script**
-   ```bash
-   python deployment/deploy_to_fabric.py
-   ```
-
-   This will:
-   - Create or update the Fabric workspace
-   - Create a Lakehouse
-   - Upload all notebooks
-   - Configure the resources
-
-### Option 3: Use Single-File Notebook (Alternative)
-
-If you prefer a simpler approach, you can use the `Kolada_Fabric_Notebook.py` file:
-
-1. Download `Kolada_Fabric_Notebook.py` from this repository
-2. In Microsoft Fabric, go to your workspace
-3. Click "Import" → "Notebook" → "From this computer"
-4. Select the `.py` file
-5. Attach a Lakehouse to the notebook
-6. Modify the configuration parameters (municipalities, years, KPIs)
-7. Run all cells
-
-This single notebook provides a simplified approach with:
-- **Batch requests**: Fetches multiple municipalities/years in a single API call
-- **Rate limiting**: Includes delays and retry logic to respect API limits
-- **Delta Lake storage**: Data is stored in Delta format in your Fabric Lakehouse
-- **Incremental loading**: Supports both overwrite and append modes
+   - **03_Fetch_Kolada_Data.ipynb**: Fetches actual data values (may need to run multiple times to get all the data)
 
 ## Configuration
 
@@ -284,11 +228,6 @@ The Kolada API is:
 
 ### Issue: Cannot write to Lakehouse
 **Solution**: Ensure the Lakehouse is properly attached to the notebook. The notebooks will fallback to saving Parquet files to the Files section.
-
-### Issue: Deployment script fails
-**Solution**: Verify your Service Principal has the correct permissions:
-- `Workspace.ReadWrite.All` for Fabric workspaces
-- Proper role assignments in Azure AD
 
 ### Issue: No data returned from API
 **Solution**: 
