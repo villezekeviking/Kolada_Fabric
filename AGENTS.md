@@ -39,3 +39,14 @@ for i in range(0, len(remaining_items), BATCH_SIZE):
 - DO NOT add `SparkSession.builder` or `spark.stop()` calls
 - Use `spark.table()` to read from Lakehouse tables
 - Use `.saveAsTable()` to write to Lakehouse tables
+
+## Git workflow: commit, PR, merge
+
+For every request that changes files:
+
+1. Commit all changes to a new feature branch (never leave work uncommitted).
+2. Push the branch and open a pull request to the default branch.
+3. Wait for all checks (CI/workflows) to finish.
+4. If all checks pass and there are no merge conflicts or errors, merge the pull request.
+5. After merging, delete the feature branch (remote and local).
+6. If any check fails or the PR cannot be merged, do NOT merge — leave the PR open and report the errors.
